@@ -1,18 +1,12 @@
 import { ConnectError } from '@connectrpc/connect';
 import type { DeleteBlocker, DeleteBlockedPayload } from '../../shared/types';
 
-// A request on a disabled organization fails with failed_precondition and
-// carries no PreconditionFailure. The SDK gives that case its own blocker
-// type, so it shows in the same dialog as the other blockers.
 export const ORGANIZATION_DISABLED = 'ORGANIZATION_DISABLED';
 
-// A PreconditionFailure whose violations cannot be read. It has no line, so
-// the dialog shows the generic one.
 export const UNKNOWN_BLOCKER = 'UNKNOWN';
 
 export const SOLE_OWNER_WITH_MEMBERS = 'SOLE_OWNER_WITH_MEMBERS';
 
-// Used once for all blockers that have no line.
 export const GENERIC_DELETE_BLOCKED_MESSAGE =
   'Something is blocking the delete right now. Please try again later or contact support.';
 
@@ -36,8 +30,6 @@ const DEFAULT_LINES: Record<string, (wording: BlockerWording) => string> = {
     `Negative token balance: Purchase enough tokens to clear your outstanding token balance before deleting this ${organizationLabel}.`
 };
 
-// Returns one line per blocker: messages[subject], else messages[type],
-// else the SDK line for the type. Identical lines show once.
 export function blockerLines(
   blockers: DeleteBlocker[],
   messages: Record<string, string>,
@@ -69,8 +61,6 @@ interface UserDeleteCheck {
   organizationsToLeave: { id: string; title: string; blockers: DeleteBlocker[] }[];
 }
 
-// Keeps what blocks an account delete: the organizations deleted with the
-// account that something blocks, and the ones the user is the only owner of.
 export function toUserDeleteBlocked({
   organizationsToDelete,
   organizationsToLeave
@@ -92,9 +82,6 @@ export function toUserDeleteBlocked({
   };
 }
 
-// Reads the blockers from a failed_precondition error. A refused delete
-// sends them as google.rpc.PreconditionFailure violations, which Connect
-// exposes in the detail's debug field. Violations carry no count.
 export function blockersFromError(err: ConnectError): DeleteBlocker[] {
   const failures = err.details.filter(
     detail =>
