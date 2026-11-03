@@ -82,7 +82,7 @@ export interface DeleteBlocker {
 
 // What blocks a delete, for each entity.
 export type DeleteBlockedPayload = {
-  entity: 'organization';
+  entity: 'organization' | 'project';
   blockers: DeleteBlocker[];
 };
 
