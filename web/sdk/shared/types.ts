@@ -81,10 +81,19 @@ export interface DeleteBlocker {
 }
 
 // What blocks a delete, for each entity.
-export type DeleteBlockedPayload = {
-  entity: 'organization' | 'project';
-  blockers: DeleteBlocker[];
-};
+export type DeleteBlockedPayload =
+  | { entity: 'organization' | 'project'; blockers: DeleteBlocker[] }
+  | {
+      entity: 'user';
+      /** Organizations deleted with the account that something blocks. */
+      organizationsToDelete: {
+        id: string;
+        title: string;
+        blockers: DeleteBlocker[];
+      }[];
+      /** Organizations with other members that the user is the only owner of. */
+      soleOwnerOf: { id: string; title: string }[];
+    };
 
 export type DeleteBlockedContext = DeleteBlockedPayload & {
   /** What the host app calls the entity, in lower case. */

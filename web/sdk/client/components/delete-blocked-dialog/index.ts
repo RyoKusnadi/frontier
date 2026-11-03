@@ -1,4 +1,5 @@
 export {
+  DeleteBlockedContent,
   DeleteBlockedDialog,
   DeleteBlockedDialogHost
 } from './delete-blocked-dialog';

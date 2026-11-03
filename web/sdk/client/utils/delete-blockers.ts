@@ -1,5 +1,5 @@
 import { ConnectError } from '@connectrpc/connect';
-import type { DeleteBlocker } from '../../shared/types';
+import type { DeleteBlocker, DeleteBlockedPayload } from '../../shared/types';
 
 // A request on a disabled organization fails with failed_precondition and
 // carries no PreconditionFailure. The SDK gives that case its own blocker
@@ -9,6 +9,8 @@ export const ORGANIZATION_DISABLED = 'ORGANIZATION_DISABLED';
 // A PreconditionFailure whose violations cannot be read. It has no line, so
 // the dialog shows the generic one.
 export const UNKNOWN_BLOCKER = 'UNKNOWN';
+
+export const SOLE_OWNER_WITH_MEMBERS = 'SOLE_OWNER_WITH_MEMBERS';
 
 // Used once for all blockers that have no line.
 export const GENERIC_DELETE_BLOCKED_MESSAGE =
@@ -60,6 +62,34 @@ export function blockerLines(
 
 export function toDeleteBlockers(blockers: DeleteBlocker[]): DeleteBlocker[] {
   return blockers.map(({ type, subject, count }) => ({ type, subject, count }));
+}
+
+interface UserDeleteCheck {
+  organizationsToDelete: { id: string; title: string; blockers: DeleteBlocker[] }[];
+  organizationsToLeave: { id: string; title: string; blockers: DeleteBlocker[] }[];
+}
+
+// Keeps what blocks an account delete: the organizations deleted with the
+// account that something blocks, and the ones the user is the only owner of.
+export function toUserDeleteBlocked({
+  organizationsToDelete,
+  organizationsToLeave
+}: UserDeleteCheck): Extract<DeleteBlockedPayload, { entity: 'user' }> {
+  return {
+    entity: 'user',
+    organizationsToDelete: organizationsToDelete
+      .filter(org => org.blockers.length > 0)
+      .map(({ id, title, blockers }) => ({
+        id,
+        title,
+        blockers: toDeleteBlockers(blockers)
+      })),
+    soleOwnerOf: organizationsToLeave
+      .filter(org =>
+        org.blockers.some(({ type }) => type === SOLE_OWNER_WITH_MEMBERS)
+      )
+      .map(({ id, title }) => ({ id, title }))
+  };
 }
 
 // Reads the blockers from a failed_precondition error. A refused delete

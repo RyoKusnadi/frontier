@@ -3,8 +3,10 @@ import {
   GENERIC_DELETE_BLOCKED_MESSAGE,
   ORGANIZATION_DISABLED,
   UNKNOWN_BLOCKER,
+  SOLE_OWNER_WITH_MEMBERS,
   blockerLines,
-  blockersFromError
+  blockersFromError,
+  toUserDeleteBlocked
 } from './delete-blockers';
 
 const wording = { organizationLabel: 'workspace', basePlanTitle: 'Standard Plan' };
@@ -126,5 +128,31 @@ describe('blockersFromError', () => {
     expect(blockerLines(blockers, {}, wording)).toEqual([
       GENERIC_DELETE_BLOCKED_MESSAGE
     ]);
+  });
+});
+
+describe('toUserDeleteBlocked', () => {
+  it('keeps the blocked organizations to delete and the sole-owner ones', () => {
+    const subscription = {
+      ...blocker('ACTIVE_SUBSCRIPTION', 'sub-1'),
+      message: 'developer text'
+    };
+    const blocked = toUserDeleteBlocked({
+      organizationsToDelete: [
+        { id: 'org-a', title: 'Personal', blockers: [subscription] },
+        { id: 'org-b', title: 'Sandbox', blockers: [] }
+      ],
+      organizationsToLeave: [
+        { id: 'org-c', title: 'Team', blockers: [blocker(SOLE_OWNER_WITH_MEMBERS, 'org-c')] },
+        { id: 'org-d', title: 'Partner', blockers: [] }
+      ]
+    });
+    expect(blocked).toEqual({
+      entity: 'user',
+      organizationsToDelete: [
+        { id: 'org-a', title: 'Personal', blockers: [blocker('ACTIVE_SUBSCRIPTION', 'sub-1')] }
+      ],
+      soleOwnerOf: [{ id: 'org-c', title: 'Team' }]
+    });
   });
 });
